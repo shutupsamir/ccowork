@@ -1,0 +1,114 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ── Enums ──────────────────────────────────────────────────────────────────────
+
+enum MatchRequestStatus {
+  SEARCHING
+  MATCHED
+  CANCELLED
+  EXPIRED
+}
+
+enum SessionStatus {
+  MATCHED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum VideoProvider {
+  TWILIO
+}
+
+// ── Models ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String?
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+
+  matchRequests         MatchRequest[]
+  sessionParticipations SessionParticipant[]
+  blockedUsers          UserBlocklist[]      @relation("Blocker")
+  blockedBy             UserBlocklist[]      @relation("Blocked")
+}
+
+model MatchRequest {
+  id              String             @id @default(uuid())
+  userId          String
+  durationMinutes Int
+  status          MatchRequestStatus @default(SEARCHING)
+  createdAt       DateTime           @default(now())
+  matchedSessionId String?
+  expiresAtUtc    DateTime
+
+  user           User     @relation(fields: [userId], references: [id])
+  matchedSession Session? @relation(fields: [matchedSessionId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId, status])
+}
+
+model Session {
+  id              String        @id @default(uuid())
+  startAtUtc      DateTime
+  endAtUtc        DateTime
+  durationMinutes Int
+  status          SessionStatus @default(MATCHED)
+  createdAt       DateTime      @default(now())
+
+  matchRequests MatchRequest[]
+  participants  SessionParticipant[]
+  videoRoom     VideoRoom?
+
+  @@index([startAtUtc])
+}
+
+model SessionParticipant {
+  id              String    @id @default(uuid())
+  sessionId       String
+  userId          String
+  joinedAtUtc     DateTime?
+  leftAtUtc       DateTime?
+  rating          Int?
+  partnerShowedUp Boolean?
+
+  session Session @relation(fields: [sessionId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, sessionId])
+}
+
+model VideoRoom {
+  id        String        @id @default(uuid())
+  sessionId String        @unique
+  provider  VideoProvider @default(TWILIO)
+  roomName  String        @unique
+  createdAt DateTime      @default(now())
+  endedAtUtc DateTime?
+
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@index([roomName])
+}
+
+model UserBlocklist {
+  id            String   @id @default(uuid())
+  userId        String
+  blockedUserId String
+  createdAt     DateTime @default(now())
+
+  user        User @relation("Blocker", fields: [userId], references: [id])
+  blockedUser User @relation("Blocked", fields: [blockedUserId], references: [id])
+
+  @@unique([userId, blockedUserId])
+}

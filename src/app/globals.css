@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', system-ui, sans-serif;
+    --font-accent: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-bgPrimary text-textPrimary font-sans antialiased;
+  }
+}
