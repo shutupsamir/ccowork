@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MatchStatusPanel } from '@/components/app/match-status-panel';
@@ -14,9 +14,25 @@ export default function MatchPage() {
   const [matchRequestId, setMatchRequestId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+  const [bringAgent, setBringAgent] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [agents, setAgents] = useState<{ id: string; name: string; status: string }[]>([]);
 
   const { status, matchedSessionId, elapsedSeconds, error: pollError } =
     useMatchPolling(matchRequestId);
+
+  useEffect(() => {
+    async function loadAgents() {
+      try {
+        const res = await fetch('/api/agents');
+        if (res.ok) {
+          const data = await res.json();
+          setAgents(data.agents.filter((a: { status: string }) => a.status === 'ACTIVE'));
+        }
+      } catch {}
+    }
+    loadAgents();
+  }, []);
 
   const handleMatch = useCallback(async () => {
     setIsStarting(true);
@@ -26,7 +42,11 @@ export default function MatchPage() {
       const res = await fetch('/api/match/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationMinutes: duration }),
+        body: JSON.stringify({
+          durationMinutes: duration,
+          bringAgent,
+          agentId: bringAgent ? selectedAgentId : undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -41,7 +61,7 @@ export default function MatchPage() {
     } finally {
       setIsStarting(false);
     }
-  }, [duration]);
+  }, [duration, bringAgent, selectedAgentId]);
 
   const handleCancel = useCallback(async () => {
     if (matchRequestId) {
@@ -90,6 +110,51 @@ export default function MatchPage() {
               </button>
             ))}
           </div>
+
+          {/* Agent toggle */}
+          {agents.length > 0 && (
+            <div className="w-full max-w-[280px] space-y-2">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm text-textPrimary">Bring my agent?</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={bringAgent}
+                  onClick={() => {
+                    setBringAgent((prev) => !prev);
+                    if (!bringAgent && agents.length > 0 && !selectedAgentId) {
+                      setSelectedAgentId(agents[0].id);
+                    }
+                  }}
+                  className={cn(
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200',
+                    bringAgent ? 'bg-focusBlue' : 'bg-borderNeutral'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-4 w-4 rounded-full bg-white transition-transform duration-200',
+                      bringAgent ? 'translate-x-6' : 'translate-x-1'
+                    )}
+                  />
+                </button>
+              </label>
+
+              {bringAgent && (
+                <select
+                  value={selectedAgentId ?? ''}
+                  onChange={(e) => setSelectedAgentId(e.target.value)}
+                  className="w-full rounded-button border border-borderNeutral bg-bgPrimary px-3 py-2 text-sm text-textPrimary focus:outline-none focus:ring-2 focus:ring-focusBlue transition-colors duration-200"
+                >
+                  {agents.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
 
           <Button
             size="lg"

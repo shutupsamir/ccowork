@@ -38,7 +38,9 @@ export async function getActiveMatchRequest(userId: string) {
  */
 export async function createMatchRequest(
   userId: string,
-  durationMinutes: 25 | 50
+  durationMinutes: 25 | 50,
+  bringAgent: boolean = false,
+  agentId?: string
 ) {
   // Check for existing active search
   const existing = await getActiveMatchRequest(userId);
@@ -62,6 +64,9 @@ export async function createMatchRequest(
       durationMinutes,
       status: 'SEARCHING',
       expiresAtUtc,
+      bringAgent,
+      agentId: agentId ?? null,
+      sessionType: bringAgent ? 'HUMAN_AGENT' : 'HUMAN_ONLY',
     },
   });
 }
@@ -173,12 +178,14 @@ export async function runMatchmaker(): Promise<number> {
               );
 
               // Create session
+              const hasAgent = reqA.bringAgent || reqB.bringAgent;
               const session = await tx.session.create({
                 data: {
                   startAtUtc,
                   endAtUtc,
                   durationMinutes,
                   status: 'MATCHED',
+                  sessionType: hasAgent ? 'HUMAN_AGENT' : 'HUMAN_ONLY',
                 },
               });
 
@@ -186,8 +193,8 @@ export async function runMatchmaker(): Promise<number> {
               await tx.videoRoom.create({
                 data: {
                   sessionId: session.id,
-                  provider: 'TWILIO',
-                  roomName: `ccowork_${session.id}`,
+                  provider: 'JITSI',
+                  roomName: `ccowork-${session.id}`,
                 },
               });
 
@@ -198,6 +205,19 @@ export async function runMatchmaker(): Promise<number> {
                   { sessionId: session.id, userId: reqB.userId },
                 ],
               });
+
+              // Add agent participants if requested
+              for (const req of [reqA, reqB]) {
+                if (req.bringAgent && req.agentId) {
+                  await tx.sessionParticipant.create({
+                    data: {
+                      sessionId: session.id,
+                      userId: req.userId,
+                      agentId: req.agentId,
+                    },
+                  });
+                }
+              }
 
               // Update both match requests to MATCHED
               // Use updateMany with status filter to ensure atomicity

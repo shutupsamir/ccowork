@@ -8,6 +8,8 @@ import { currentUser } from '@clerk/nextjs/server';
 
 const bodySchema = z.object({
   durationMinutes: z.union([z.literal(25), z.literal(50)]),
+  bringAgent: z.boolean().default(false),
+  agentId: z.string().uuid().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -60,7 +62,9 @@ export async function POST(req: NextRequest) {
 
     const matchRequest = await createMatchRequest(
       userId,
-      parsed.data.durationMinutes
+      parsed.data.durationMinutes,
+      parsed.data.bringAgent,
+      parsed.data.agentId
     );
 
     return NextResponse.json({ matchRequest }, { status: 201 });

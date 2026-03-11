@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { createAccessToken, createRoomName } from '@/lib/video/provider';
+import { getJitsiUrl } from '@/lib/video/provider';
 
 const bodySchema = z.object({
   sessionId: z.string().uuid(),
@@ -50,10 +50,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const roomName = createRoomName(sessionId);
-    const token = createAccessToken(userId, roomName);
+    // Update session to IN_PROGRESS if still MATCHED
+    if (participant.session.status === 'MATCHED') {
+      await prisma.session.update({
+        where: { id: sessionId },
+        data: { status: 'IN_PROGRESS' },
+      });
+    }
 
-    return NextResponse.json({ token, roomName });
+    // Mark participant as joined
+    if (!participant.joinedAtUtc) {
+      await prisma.sessionParticipant.update({
+        where: { id: participant.id },
+        data: { joinedAtUtc: new Date() },
+      });
+    }
+
+    const meetingUrl = getJitsiUrl(sessionId);
+
+    return NextResponse.json({ meetingUrl });
   } catch (err) {
     console.error('[POST /api/video/token]', err);
     return NextResponse.json(

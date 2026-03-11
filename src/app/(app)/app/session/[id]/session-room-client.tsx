@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SessionTimer } from '@/components/app/session-timer';
+import { VideoRoom } from '@/components/app/video-room';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Video, PhoneOff, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SessionChat } from '@/components/app/session-chat';
 
 type SessionStatus = 'MATCHED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
@@ -24,6 +26,8 @@ interface SessionRoomClientProps {
   roomName: string | null;
   hasJoined: boolean;
   hasRated: boolean;
+  hasAgent: boolean;
+  agentName: string | null;
 }
 
 function canJoinNow(startAtUtc: string): boolean {
@@ -50,12 +54,18 @@ export function SessionRoomClient({
   roomName,
   hasJoined: initialHasJoined,
   hasRated: initialHasRated,
+  hasAgent,
+  agentName,
 }: SessionRoomClientProps) {
   const router = useRouter();
   const { toast } = useToast();
 
+  // agentName is available for future agent panel display
+  void agentName;
+
   const [status, setStatus] = useState<SessionStatus>(initialStatus);
   const [hasJoined, setHasJoined] = useState(initialHasJoined);
+  const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [hasRated, setHasRated] = useState(initialHasRated);
@@ -75,9 +85,11 @@ export function SessionRoomClient({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to get video token');
+        throw new Error(data.error || 'Failed to join session');
       }
 
+      const data = await res.json();
+      setMeetingUrl(data.meetingUrl);
       setHasJoined(true);
       setStatus('IN_PROGRESS');
       toast('success', 'Joined session. Time to focus.');
@@ -103,6 +115,7 @@ export function SessionRoomClient({
       }
 
       setStatus('COMPLETED');
+      setMeetingUrl(null);
       toast('info', 'Session ended.');
     } catch (err) {
       toast('error', err instanceof Error ? err.message : 'Failed to end session');
@@ -113,6 +126,7 @@ export function SessionRoomClient({
 
   const handleTimeUp = useCallback(() => {
     setStatus('COMPLETED');
+    setMeetingUrl(null);
     toast('info', 'Time is up. Great session.');
   }, [toast]);
 
@@ -271,7 +285,7 @@ export function SessionRoomClient({
 
   // -- In progress --
   return (
-    <div className="mx-auto max-w-lg space-y-6 pt-8">
+    <div className="mx-auto max-w-5xl space-y-6 pt-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-textPrimary">In session</h1>
@@ -284,12 +298,18 @@ export function SessionRoomClient({
         />
       </div>
 
-      <Card className="flex aspect-video items-center justify-center bg-bgPrimary">
-        <div className="text-center">
-          <Video size={48} className="mx-auto mb-2 text-borderNeutral" />
-          <p className="text-sm text-textMuted">Video session active</p>
-        </div>
-      </Card>
+      {meetingUrl && (
+        <VideoRoom meetingUrl={meetingUrl} partnerName={partnerName} />
+      )}
+
+      {hasAgent && (
+        <SessionChat
+          sessionId={sessionId}
+          userId={userId}
+          userName={userName}
+          hasAgent={hasAgent}
+        />
+      )}
 
       <div className="flex justify-center">
         <Button

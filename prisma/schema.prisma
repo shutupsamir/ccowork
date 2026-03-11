@@ -1,10 +1,12 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["ccowork"]
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 // ── Enums ──────────────────────────────────────────────────────────────────────
@@ -14,6 +16,8 @@ enum MatchRequestStatus {
   MATCHED
   CANCELLED
   EXPIRED
+
+  @@schema("ccowork")
 }
 
 enum SessionStatus {
@@ -21,10 +25,54 @@ enum SessionStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+
+  @@schema("ccowork")
 }
 
 enum VideoProvider {
   TWILIO
+  JITSI
+
+  @@schema("ccowork")
+}
+
+enum AgentProvider {
+  ANTHROPIC
+  OPENAI
+
+  @@schema("ccowork")
+}
+
+enum AgentStatus {
+  ACTIVE
+  PAUSED
+
+  @@schema("ccowork")
+}
+
+enum AgentCapability {
+  CHAT
+  CODE_REVIEW
+  BRAINSTORM
+  ACCOUNTABILITY
+
+  @@schema("ccowork")
+}
+
+enum MessageType {
+  USER
+  AGENT
+  SYSTEM
+
+  @@schema("ccowork")
+}
+
+enum SessionType {
+  HUMAN_ONLY
+  HUMAN_AGENT
+  AGENT_ONLY
+
+  @@schema("ccowork")
 }
 
 // ── Models ─────────────────────────────────────────────────────────────────────
@@ -40,43 +88,55 @@ model User {
   sessionParticipations SessionParticipant[]
   blockedUsers          UserBlocklist[]      @relation("Blocker")
   blockedBy             UserBlocklist[]      @relation("Blocked")
+  agents                Agent[]
+  apiKeys               AgentApiKey[]
+
+  @@schema("ccowork")
 }
 
 model MatchRequest {
-  id              String             @id @default(uuid())
-  userId          String
-  durationMinutes Int
-  status          MatchRequestStatus @default(SEARCHING)
-  createdAt       DateTime           @default(now())
+  id               String             @id @default(uuid())
+  userId           String
+  durationMinutes  Int
+  status           MatchRequestStatus @default(SEARCHING)
+  createdAt        DateTime           @default(now())
   matchedSessionId String?
-  expiresAtUtc    DateTime
+  expiresAtUtc     DateTime
+  bringAgent       Boolean            @default(false)
+  agentId          String?
+  sessionType      SessionType        @default(HUMAN_ONLY)
 
   user           User     @relation(fields: [userId], references: [id])
   matchedSession Session? @relation(fields: [matchedSessionId], references: [id])
 
   @@index([status, createdAt])
   @@index([userId, status])
+  @@schema("ccowork")
 }
 
 model Session {
-  id              String        @id @default(uuid())
+  id              String      @id @default(uuid())
   startAtUtc      DateTime
   endAtUtc        DateTime
   durationMinutes Int
   status          SessionStatus @default(MATCHED)
+  sessionType     SessionType   @default(HUMAN_ONLY)
   createdAt       DateTime      @default(now())
 
   matchRequests MatchRequest[]
   participants  SessionParticipant[]
   videoRoom     VideoRoom?
+  messages      SessionMessage[]
 
   @@index([startAtUtc])
+  @@schema("ccowork")
 }
 
 model SessionParticipant {
   id              String    @id @default(uuid())
   sessionId       String
   userId          String
+  agentId         String?
   joinedAtUtc     DateTime?
   leftAtUtc       DateTime?
   rating          Int?
@@ -84,14 +144,16 @@ model SessionParticipant {
 
   session Session @relation(fields: [sessionId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
+  agent   Agent?  @relation(fields: [agentId], references: [id])
 
   @@unique([userId, sessionId])
+  @@schema("ccowork")
 }
 
 model VideoRoom {
   id        String        @id @default(uuid())
   sessionId String        @unique
-  provider  VideoProvider @default(TWILIO)
+  provider  VideoProvider @default(JITSI)
   roomName  String        @unique
   createdAt DateTime      @default(now())
   endedAtUtc DateTime?
@@ -99,6 +161,7 @@ model VideoRoom {
   session Session @relation(fields: [sessionId], references: [id])
 
   @@index([roomName])
+  @@schema("ccowork")
 }
 
 model UserBlocklist {
@@ -111,4 +174,56 @@ model UserBlocklist {
   blockedUser User @relation("Blocked", fields: [blockedUserId], references: [id])
 
   @@unique([userId, blockedUserId])
+  @@schema("ccowork")
+}
+
+model Agent {
+  id           String            @id @default(uuid())
+  ownerId      String
+  name         String
+  provider     AgentProvider
+  model        String
+  systemPrompt String?
+  avatarUrl    String?
+  capabilities AgentCapability[]
+  status       AgentStatus       @default(ACTIVE)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  owner                 User                 @relation(fields: [ownerId], references: [id])
+  sessionParticipations SessionParticipant[]
+
+  @@index([ownerId])
+  @@schema("ccowork")
+}
+
+model AgentApiKey {
+  id           String        @id @default(uuid())
+  userId       String
+  provider     AgentProvider
+  encryptedKey String
+  iv           String
+  label        String?
+  createdAt    DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, provider])
+  @@schema("ccowork")
+}
+
+model SessionMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  senderId  String?
+  agentId   String?
+  type      MessageType
+  content   String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, createdAt])
+  @@schema("ccowork")
 }

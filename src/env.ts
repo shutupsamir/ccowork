@@ -6,11 +6,6 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
     .string()
     .min(1, 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required'),
-  TWILIO_ACCOUNT_SID: z.string().min(1, 'TWILIO_ACCOUNT_SID is required'),
-  TWILIO_API_KEY_SID: z.string().min(1, 'TWILIO_API_KEY_SID is required'),
-  TWILIO_API_KEY_SECRET: z
-    .string()
-    .min(1, 'TWILIO_API_KEY_SECRET is required'),
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
   NEXT_PUBLIC_APP_URL: z.string().min(1, 'NEXT_PUBLIC_APP_URL is required'),
   INNGEST_EVENT_KEY: z.string().optional(),

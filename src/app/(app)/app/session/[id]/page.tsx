@@ -15,7 +15,10 @@ export default async function SessionPage({ params }: SessionPageProps) {
     where: { id: params.id },
     include: {
       participants: {
-        include: { user: { select: { id: true, name: true } } },
+        include: {
+          user: { select: { id: true, name: true } },
+          agent: { select: { id: true, name: true, status: true } },
+        },
       },
       videoRoom: { select: { roomName: true } },
     },
@@ -27,7 +30,8 @@ export default async function SessionPage({ params }: SessionPageProps) {
   if (!isParticipant) notFound();
 
   const currentParticipant = session.participants.find((p) => p.userId === userId)!;
-  const partner = session.participants.find((p) => p.userId !== userId);
+  const partner = session.participants.find((p) => p.userId !== userId && p.agentId === null);
+  const agentParticipant = session.participants.find((p) => p.agentId !== null);
 
   return (
     <SessionRoomClient
@@ -43,6 +47,8 @@ export default async function SessionPage({ params }: SessionPageProps) {
       roomName={session.videoRoom?.roomName ?? null}
       hasJoined={!!currentParticipant.joinedAtUtc}
       hasRated={currentParticipant.rating !== null}
+      hasAgent={!!agentParticipant}
+      agentName={agentParticipant?.agent?.name ?? null}
     />
   );
 }
