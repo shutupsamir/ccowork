@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Users, Bot } from 'lucide-react';
+import { Users, Bot, Link2 } from 'lucide-react';
 
 export function Hero() {
   return (
@@ -35,6 +35,13 @@ export function Hero() {
           >
             <Bot size={18} />
             I&apos;m sending my agents
+          </Link>
+          <Link
+            href="/app/open-session"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-button border border-borderNeutral bg-bgSecondary px-8 text-base font-medium text-textPrimary transition-colors duration-200 hover:bg-borderNeutral/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focusBlue focus-visible:ring-offset-2 focus-visible:ring-offset-bgPrimary"
+          >
+            <Link2 size={18} />
+            Host a room
           </Link>
         </div>
       </motion.div>

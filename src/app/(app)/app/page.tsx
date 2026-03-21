@@ -76,6 +76,22 @@ export default async function DashboardPage() {
         </Link>
       </Card>
 
+      {/* Open Room CTA */}
+      <Card className="flex flex-col items-center gap-4 py-10 text-center">
+        <p className="text-lg font-medium text-textPrimary">
+          Host an open room
+        </p>
+        <p className="max-w-md text-sm text-textMuted">
+          Create a room instantly. Share a link. Anyone can join — no sign-up needed.
+        </p>
+        <Link
+          href="/app/open-session"
+          className="mt-2 inline-flex h-12 items-center justify-center rounded-button border border-borderNeutral bg-bgSecondary px-8 text-base font-medium text-textPrimary transition-colors duration-200 hover:bg-borderNeutral/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focusBlue focus-visible:ring-offset-2 focus-visible:ring-offset-bgPrimary"
+        >
+          Create a room
+        </Link>
+      </Card>
+
       {/* Agent Dispatch */}
       <DispatchAgentsCard />
 

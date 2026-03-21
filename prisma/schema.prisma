@@ -72,6 +72,7 @@ enum SessionType {
   HUMAN_ONLY
   HUMAN_AGENT
   AGENT_ONLY
+  OPEN
 
   @@schema("ccowork")
 }
@@ -124,6 +125,8 @@ model Session {
   sessionType     SessionType   @default(HUMAN_ONLY)
   topic           String?
   summary         String?
+  inviteCode      String?       @unique
+  hostUserId      String?
   createdAt       DateTime      @default(now())
 
   matchRequests MatchRequest[]

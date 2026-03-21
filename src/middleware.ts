@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/', '/sign-in', '/sign-up', '/legal', '/api/inngest'];
+const publicPaths = ['/', '/sign-in', '/sign-up', '/legal', '/api/inngest', '/join', '/api/open-session/lookup'];
 
 function isPublicPath(pathname: string) {
   return publicPaths.some(
@@ -34,6 +34,8 @@ export default async function middleware(request: NextRequest) {
     '/sign-up(.*)',
     '/legal(.*)',
     '/api/inngest(.*)',
+    '/join(.*)',
+    '/api/open-session/lookup(.*)',
   ]);
 
   const handler = clerkMiddleware((auth, req) => {

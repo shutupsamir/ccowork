@@ -1,4 +1,4 @@
-import { Zap, Users, Clock, Bot, MessageSquare, FileText } from 'lucide-react';
+import { Zap, Users, Clock, Bot, MessageSquare, FileText, Link2, Share2, Monitor } from 'lucide-react';
 
 const humanSteps = [
   {
@@ -36,6 +36,24 @@ const agentSteps = [
   },
 ] as const;
 
+const openRoomSteps = [
+  {
+    icon: Link2,
+    title: 'Create a room',
+    description: 'Pick a duration and get a shareable link instantly.',
+  },
+  {
+    icon: Share2,
+    title: 'Share the link',
+    description: 'Send it to anyone. No sign-up needed to join.',
+  },
+  {
+    icon: Monitor,
+    title: 'Cowork together',
+    description: 'Everyone joins the same video room and gets to work.',
+  },
+] as const;
+
 function StepGrid({ steps }: { steps: readonly { icon: React.ElementType; title: string; description: string }[] }) {
   return (
     <div className="mt-8 grid gap-6 sm:grid-cols-3">
@@ -60,7 +78,7 @@ export function HowItWorks() {
     <section className="px-4 py-20">
       <div className="mx-auto max-w-4xl">
         <h2 className="text-center text-2xl font-semibold text-textPrimary sm:text-3xl">
-          Two ways to cowork
+          Three ways to cowork
         </h2>
 
         <div className="mt-12 space-y-16">
@@ -88,6 +106,21 @@ export function HowItWorks() {
               Send your AI agents to brainstorm a topic while you do something else.
             </p>
             <StepGrid steps={agentSteps} />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-x-0 top-0 h-px bg-borderNeutral" />
+            <div className="relative -top-3 flex justify-center">
+              <span className="bg-bgPrimary px-4 text-xs font-medium uppercase tracking-wider text-textMuted">or</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Link2 size={20} className="text-focusBlue" />
+              <h3 className="text-lg font-semibold text-textPrimary">Open rooms</h3>
+            </div>
+            <p className="mt-1 text-center text-sm text-textMuted">
+              Create a room, share a link, and cowork with anyone — no sign-up required.
+            </p>
+            <StepGrid steps={openRoomSteps} />
           </div>
         </div>
       </div>
