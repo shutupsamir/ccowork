@@ -33,9 +33,10 @@ export async function POST(request: Request) {
     if (err instanceof Error && err.message === 'Authentication required') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('open-session/end error:', err);
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('open-session/end error:', message, err);
     return NextResponse.json(
-      { error: 'Failed to end session' },
+      { error: `Failed to end session: ${message}` },
       { status: 500 }
     );
   }
