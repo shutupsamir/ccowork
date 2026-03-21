@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getJitsiUrl } from '@/lib/video/provider';
+import { getMeetingUrl } from '@/lib/video/provider';
 import { GuestJoinClient } from './guest-join-client';
 
 interface JoinPageProps {
@@ -36,7 +36,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
   }
 
   const hostName = session.participants[0]?.user?.name ?? 'Someone';
-  const meetingUrl = getJitsiUrl(code);
+  const meetingUrl = await getMeetingUrl(code, { name: 'Guest' });
 
   return (
     <GuestJoinClient

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getJitsiUrl } from '@/lib/video/provider';
+import { getJitsiUrl, getMeetingUrl } from '@/lib/video/provider';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   }
 
   const hostName = session.participants[0]?.user?.name ?? 'Someone';
-  const meetingUrl = getJitsiUrl(code);
+  const meetingUrl = await getMeetingUrl(code, { name: 'Guest' });
 
   return NextResponse.json({
     hostName,

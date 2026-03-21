@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { requireDbUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { createRoomName, getJitsiUrl } from '@/lib/video/provider';
+import { createRoomName, getMeetingUrl } from '@/lib/video/provider';
 
 export async function POST(request: Request) {
   try {
@@ -44,7 +44,11 @@ export async function POST(request: Request) {
       },
     });
 
-    const meetingUrl = getJitsiUrl(inviteCode);
+    const meetingUrl = await getMeetingUrl(inviteCode, {
+      name: dbUser.name ?? 'Host',
+      email: dbUser.email,
+      isModerator: true,
+    });
 
     return NextResponse.json({
       sessionId: session.id,

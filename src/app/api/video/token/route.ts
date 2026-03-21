@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { getJitsiUrl } from '@/lib/video/provider';
+import { getMeetingUrl } from '@/lib/video/provider';
 
 const bodySchema = z.object({
   sessionId: z.string().uuid(),
@@ -66,7 +66,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const meetingUrl = getJitsiUrl(sessionId);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+
+    const meetingUrl = await getMeetingUrl(sessionId, {
+      name: user?.name ?? 'User',
+      email: user?.email,
+      isModerator: false,
+    });
 
     return NextResponse.json({ meetingUrl });
   } catch (err) {
