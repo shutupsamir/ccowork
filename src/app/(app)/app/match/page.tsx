@@ -166,9 +166,27 @@ export default function MatchPage() {
           </Button>
 
           {startError && (
-            <p className="text-sm text-error" role="alert">
-              {startError}
-            </p>
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm text-error" role="alert">
+                {startError}
+              </p>
+              {startError.toLowerCase().includes('active search') && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    setStartError(null);
+                    await fetch('/api/match/cancel', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({}),
+                    }).catch(() => {});
+                  }}
+                >
+                  Cancel previous search
+                </Button>
+              )}
+            </div>
           )}
         </Card>
       ) : (
