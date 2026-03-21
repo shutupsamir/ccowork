@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import { DispatchAgentsCard } from '@/components/app/dispatch-agents-card';
 import { Calendar } from 'lucide-react';
 
 function formatSessionTime(date: Date): string {
@@ -74,6 +75,9 @@ export default async function DashboardPage() {
           Match me now
         </Link>
       </Card>
+
+      {/* Agent Dispatch */}
+      <DispatchAgentsCard />
 
       {/* Recent Sessions */}
       <section>

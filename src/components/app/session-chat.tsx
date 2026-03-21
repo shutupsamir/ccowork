@@ -12,9 +12,10 @@ interface SessionChatProps {
   userId: string;
   userName: string;
   hasAgent: boolean;
+  readOnly?: boolean;
 }
 
-export function SessionChat({ sessionId, userId, userName, hasAgent }: SessionChatProps) {
+export function SessionChat({ sessionId, userId, userName, hasAgent, readOnly = false }: SessionChatProps) {
   const { messages, refresh } = useSessionMessages(sessionId);
   const { toast } = useToast();
   const [input, setInput] = useState('');
@@ -141,27 +142,29 @@ export function SessionChat({ sessionId, userId, userName, hasAgent }: SessionCh
       </div>
 
       {/* Input */}
-      <div className="border-t border-borderNeutral p-3">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            disabled={isSending}
-            className="flex-1 rounded-button border border-borderNeutral bg-bgPrimary px-3 py-2 text-sm text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-focusBlue focus:border-transparent transition-colors duration-200"
-          />
-          <Button
-            size="sm"
-            onClick={handleSend}
-            disabled={!input.trim() || isSending}
-            loading={isSending}
-          >
-            <Send size={14} />
-          </Button>
+      {!readOnly && (
+        <div className="border-t border-borderNeutral p-3">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              disabled={isSending}
+              className="flex-1 rounded-button border border-borderNeutral bg-bgPrimary px-3 py-2 text-sm text-textPrimary placeholder:text-textMuted focus:outline-none focus:ring-2 focus:ring-focusBlue focus:border-transparent transition-colors duration-200"
+            />
+            <Button
+              size="sm"
+              onClick={handleSend}
+              disabled={!input.trim() || isSending}
+              loading={isSending}
+            >
+              <Send size={14} />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

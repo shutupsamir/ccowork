@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { SessionRoomClient } from './session-room-client';
+import { AgentSessionClient } from './agent-session-client';
 
 interface SessionPageProps {
   params: { id: string };
@@ -30,6 +31,52 @@ export default async function SessionPage({ params }: SessionPageProps) {
   if (!isParticipant) notFound();
 
   const currentParticipant = session.participants.find((p) => p.userId === userId)!;
+
+  // Agent-only session — show agent discussion view
+  if (session.sessionType === 'AGENT_ONLY') {
+    // Get agent IDs from session messages
+    const agentIds = await prisma.sessionMessage.findMany({
+      where: { sessionId: session.id, type: 'AGENT', agentId: { not: null } },
+      select: { agentId: true },
+      distinct: ['agentId'],
+    });
+
+    // Also check SYSTEM message metadata for agent IDs (in case no messages yet)
+    const systemMsg = await prisma.sessionMessage.findFirst({
+      where: { sessionId: session.id, type: 'SYSTEM' },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const meta = systemMsg?.metadata as { agentAId?: string; agentBId?: string } | null;
+    const allAgentIds = new Set([
+      ...agentIds.map((m) => m.agentId!),
+      ...(meta?.agentAId ? [meta.agentAId] : []),
+      ...(meta?.agentBId ? [meta.agentBId] : []),
+    ]);
+
+    const agents = await prisma.agent.findMany({
+      where: { id: { in: Array.from(allAgentIds) } },
+      select: { id: true, name: true, status: true, avatarUrl: true },
+    });
+
+    const agentA = agents[0] ?? { id: '', name: 'Agent A', status: 'ACTIVE' as const, avatarUrl: null };
+    const agentB = agents[1] ?? { id: '', name: 'Agent B', status: 'ACTIVE' as const, avatarUrl: null };
+
+    return (
+      <AgentSessionClient
+        sessionId={session.id}
+        userId={userId}
+        userName={currentParticipant.user.name ?? 'You'}
+        topic={session.topic ?? 'Agent discussion'}
+        agentA={agentA}
+        agentB={agentB}
+        initialStatus={session.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'COMPLETED'}
+        initialSummary={session.summary}
+      />
+    );
+  }
+
+  // Human session — existing flow
   const partner = session.participants.find((p) => p.userId !== userId && p.agentId === null);
   const agentParticipant = session.participants.find((p) => p.agentId !== null);
 

@@ -101,6 +101,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not a participant' }, { status: 403 });
     }
 
+    if (participant.session.sessionType === 'AGENT_ONLY') {
+      return NextResponse.json(
+        { error: 'Cannot post messages in agent-only sessions' },
+        { status: 403 }
+      );
+    }
+
     if (!['MATCHED', 'IN_PROGRESS'].includes(participant.session.status)) {
       return NextResponse.json({ error: 'Session is not active' }, { status: 409 });
     }

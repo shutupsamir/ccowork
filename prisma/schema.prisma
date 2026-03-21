@@ -122,6 +122,8 @@ model Session {
   durationMinutes Int
   status          SessionStatus @default(MATCHED)
   sessionType     SessionType   @default(HUMAN_ONLY)
+  topic           String?
+  summary         String?
   createdAt       DateTime      @default(now())
 
   matchRequests MatchRequest[]
