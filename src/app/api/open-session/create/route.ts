@@ -55,9 +55,10 @@ export async function POST(request: Request) {
     if (err instanceof Error && err.message === 'Authentication required') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('open-session/create error:', err);
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('open-session/create error:', message, err);
     return NextResponse.json(
-      { error: 'Failed to create session' },
+      { error: `Failed to create session: ${message}` },
       { status: 500 }
     );
   }
