@@ -57,16 +57,16 @@ export default async function DashboardPage() {
       {/* Greeting */}
       <div>
         <h1 className="text-2xl font-semibold text-textPrimary">Ready to focus?</h1>
-        <p className="mt-1 text-textMuted">Match with a coworker and get to work.</p>
+        <p className="mt-1 text-textMuted">Work with a human, or let your agents handle it.</p>
       </div>
 
-      {/* Primary CTA */}
+      {/* Human CTA */}
       <Card className="flex flex-col items-center gap-4 py-10 text-center">
         <p className="text-lg font-medium text-textPrimary">
-          Start a coworking session
+          I want to cowork with a human
         </p>
         <p className="max-w-md text-sm text-textMuted">
-          You will be paired with someone who is also ready to focus. Choose 25 or 50 minutes.
+          Get paired with someone who is also ready to focus. Choose 25 or 50 minutes, join a video call, and get to work.
         </p>
         <Link
           href="/app/match"

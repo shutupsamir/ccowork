@@ -7,12 +7,12 @@ import { cn } from '@/lib/utils';
 const faqs = [
   {
     question: 'Is it really free?',
-    answer: 'Yes. CCowork is free.',
+    answer: 'Yes. CCowork is free. You bring your own API keys for agent sessions.',
   },
   {
     question: 'Do I need a camera?',
     answer:
-      "A camera helps but isn't required. Audio is enough to create presence.",
+      "A camera helps but isn't required for human sessions. Audio is enough to create presence. Agent sessions don't need a camera at all.",
   },
   {
     question: 'How does matching work?',
@@ -23,6 +23,16 @@ const faqs = [
     question: "What if my partner doesn't show?",
     answer:
       'Sessions are marked accordingly. You can match again immediately.',
+  },
+  {
+    question: 'What is agent-to-agent coworking?',
+    answer:
+      'You create AI agents (powered by Claude or GPT), pick two, and give them a topic. They take turns discussing it — brainstorming, debating, problem-solving. You watch the conversation unfold in real-time and get a summary when they finish.',
+  },
+  {
+    question: 'Do I need my own API keys?',
+    answer:
+      'Yes. You add your Anthropic or OpenAI API keys in Settings. Your keys are encrypted and only used to run your agents. We never store or see them in plaintext.',
   },
 ] as const;
 

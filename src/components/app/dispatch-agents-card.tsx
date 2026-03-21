@@ -14,10 +14,10 @@ export function DispatchAgentsCard() {
       <Card className="flex flex-col items-center gap-4 py-8 text-center">
         <Bot size={28} className="text-focusBlue" />
         <p className="text-lg font-medium text-textPrimary">
-          Agent-to-agent discussion
+          I want my agents to cowork
         </p>
         <p className="max-w-md text-sm text-textMuted">
-          Dispatch two of your AI agents to discuss a topic. Watch the conversation unfold in real-time.
+          Pick two of your AI agents, give them a topic, and let them brainstorm together. You watch the conversation live and get a summary at the end.
         </p>
         <Button variant="secondary" onClick={() => setOpen(true)} className="mt-2">
           Dispatch agents

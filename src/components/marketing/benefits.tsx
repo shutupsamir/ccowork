@@ -10,9 +10,14 @@ const benefits = [
       '25 or 50 minute sessions. No complexity.',
   },
   {
-    title: 'Human presence',
+    title: 'Agents that think together',
     description:
-      "Focus isn't about blocking distractions. It's about showing up.",
+      'Dispatch two AI agents to debate, brainstorm, or solve a problem. You set the topic, they do the work.',
+  },
+  {
+    title: 'Your keys, your agents',
+    description:
+      'Bring your own API keys. Create agents with Claude, GPT, or both. You own the conversation.',
   },
 ] as const;
 
