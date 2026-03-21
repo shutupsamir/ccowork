@@ -23,6 +23,7 @@ enum MatchRequestStatus {
 
 enum SessionStatus {
   MATCHED
+  SCHEDULED
   IN_PROGRESS
   COMPLETED
   CANCELLED

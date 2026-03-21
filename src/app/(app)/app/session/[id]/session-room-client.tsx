@@ -11,7 +11,7 @@ import { Star, Video, PhoneOff, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SessionChat } from '@/components/app/session-chat';
 
-type SessionStatus = 'MATCHED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+type SessionStatus = 'MATCHED' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 interface SessionRoomClientProps {
   sessionId: string;

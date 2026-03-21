@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { SessionTimer } from '@/components/app/session-timer';
 import { VideoRoom } from '@/components/app/video-room';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, CheckCircle, Link2 } from 'lucide-react';
+import { Copy, CheckCircle, Link2, Clock, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type Phase = 'create' | 'active' | 'done';
+type Phase = 'create' | 'scheduled' | 'active' | 'done';
 
 export default function OpenSessionPage() {
   const router = useRouter();
@@ -20,7 +20,10 @@ export default function OpenSessionPage() {
   const [duration, setDuration] = useState<25 | 50>(25);
   const [isCreating, setIsCreating] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState(false);
+  const [scheduledStart, setScheduledStart] = useState('');
 
   // Session data (set after creation)
   const [sessionId, setSessionId] = useState('');
@@ -36,10 +39,15 @@ export default function OpenSessionPage() {
   const handleCreate = useCallback(async () => {
     setIsCreating(true);
     try {
+      const body: Record<string, unknown> = { durationMinutes: duration };
+      if (scheduleMode && scheduledStart) {
+        body.scheduledStart = new Date(scheduledStart).toISOString();
+      }
+
       const res = await fetch('/api/open-session/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durationMinutes: duration }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -50,20 +58,26 @@ export default function OpenSessionPage() {
       const data = await res.json();
       setSessionId(data.sessionId);
       setInviteCode(data.inviteCode);
-      setMeetingUrl(data.meetingUrl);
 
-      const now = new Date();
-      setStartAtUtc(now.toISOString());
-      setEndAtUtc(new Date(now.getTime() + duration * 60 * 1000).toISOString());
-
-      setPhase('active');
-      toast('success', 'Room created. Share the link to invite others.');
+      if (data.status === 'SCHEDULED') {
+        setStartAtUtc(data.startAtUtc);
+        setEndAtUtc(data.endAtUtc);
+        setPhase('scheduled');
+        toast('success', 'Session scheduled. Share the link to invite others.');
+      } else {
+        setMeetingUrl(data.meetingUrl);
+        const now = new Date();
+        setStartAtUtc(now.toISOString());
+        setEndAtUtc(new Date(now.getTime() + duration * 60 * 1000).toISOString());
+        setPhase('active');
+        toast('success', 'Room created. Share the link to invite others.');
+      }
     } catch (err) {
       toast('error', err instanceof Error ? err.message : 'Failed to create session');
     } finally {
       setIsCreating(false);
     }
-  }, [duration, toast]);
+  }, [duration, scheduleMode, scheduledStart, toast]);
 
   const handleCopyLink = useCallback(async () => {
     await navigator.clipboard.writeText(shareLink);
@@ -100,6 +114,59 @@ export default function OpenSessionPage() {
     toast('info', 'Time is up. Great session.');
   }, [toast]);
 
+  const handleStart = useCallback(async () => {
+    setIsStarting(true);
+    try {
+      const res = await fetch('/api/open-session/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to start session');
+      }
+
+      const data = await res.json();
+      setMeetingUrl(data.meetingUrl);
+
+      const now = new Date();
+      setStartAtUtc(now.toISOString());
+      setEndAtUtc(new Date(now.getTime() + duration * 60 * 1000).toISOString());
+
+      setPhase('active');
+      toast('success', 'Session started.');
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'Failed to start session');
+    } finally {
+      setIsStarting(false);
+    }
+  }, [sessionId, duration, toast]);
+
+  const handleCancel = useCallback(async () => {
+    setIsEnding(true);
+    try {
+      const res = await fetch('/api/open-session/end', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to cancel session');
+      }
+
+      setPhase('done');
+      toast('info', 'Session cancelled.');
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'Failed to cancel session');
+    } finally {
+      setIsEnding(false);
+    }
+  }, [sessionId, toast]);
+
   // -- Done --
   if (phase === 'done') {
     return (
@@ -110,6 +177,47 @@ export default function OpenSessionPage() {
         <Button variant="secondary" onClick={() => router.push('/app')}>
           Back to dashboard
         </Button>
+      </div>
+    );
+  }
+
+  // -- Scheduled --
+  if (phase === 'scheduled') {
+    const scheduledTime = new Date(startAtUtc);
+    return (
+      <div className="mx-auto max-w-md space-y-6 pt-8">
+        <div className="text-center">
+          <Calendar size={40} className="mx-auto mb-3 text-focusBlue" />
+          <h1 className="text-2xl font-semibold text-textPrimary">Session scheduled</h1>
+          <p className="mt-1 text-sm text-textMuted">
+            Starts {scheduledTime.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} at{' '}
+            {scheduledTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+          </p>
+        </div>
+
+        {/* Share link */}
+        <Card className="flex items-center gap-3">
+          <Link2 size={18} className="shrink-0 text-textMuted" />
+          <code className="flex-1 truncate text-sm text-textPrimary">{shareLink}</code>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleCopyLink}
+            className="gap-1.5 shrink-0"
+          >
+            {copied ? <CheckCircle size={14} /> : <Copy size={14} />}
+            {copied ? 'Copied' : 'Copy link'}
+          </Button>
+        </Card>
+
+        <div className="flex flex-col items-center gap-3">
+          <Button size="lg" onClick={handleStart} loading={isStarting}>
+            Start session now
+          </Button>
+          <Button variant="secondary" onClick={handleCancel} loading={isEnding}>
+            Cancel session
+          </Button>
+        </div>
       </div>
     );
   }
@@ -196,8 +304,52 @@ export default function OpenSessionPage() {
             50 min
           </button>
         </div>
-        <Button size="lg" onClick={handleCreate} loading={isCreating}>
-          Create room
+
+        {/* Schedule toggle */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => setScheduleMode(false)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-button px-4 py-2 text-sm font-medium transition-colors duration-200',
+              !scheduleMode
+                ? 'bg-focusBlue text-white'
+                : 'border border-borderNeutral bg-bgSecondary text-textPrimary hover:bg-borderNeutral/50'
+            )}
+          >
+            <Clock size={14} />
+            Start now
+          </button>
+          <button
+            onClick={() => setScheduleMode(true)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-button px-4 py-2 text-sm font-medium transition-colors duration-200',
+              scheduleMode
+                ? 'bg-focusBlue text-white'
+                : 'border border-borderNeutral bg-bgSecondary text-textPrimary hover:bg-borderNeutral/50'
+            )}
+          >
+            <Calendar size={14} />
+            Schedule for later
+          </button>
+        </div>
+
+        {scheduleMode && (
+          <input
+            type="datetime-local"
+            value={scheduledStart}
+            onChange={(e) => setScheduledStart(e.target.value)}
+            min={new Date(Date.now() + 15 * 60 * 1000).toISOString().slice(0, 16)}
+            className="w-full max-w-xs rounded-button border border-borderNeutral bg-bgSecondary px-4 py-3 text-base text-textPrimary focus:border-focusBlue focus:outline-none focus:ring-1 focus:ring-focusBlue"
+          />
+        )}
+
+        <Button
+          size="lg"
+          onClick={handleCreate}
+          loading={isCreating}
+          disabled={scheduleMode && !scheduledStart}
+        >
+          {scheduleMode ? 'Schedule session' : 'Create room'}
         </Button>
       </Card>
     </div>

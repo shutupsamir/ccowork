@@ -20,7 +20,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
     },
   });
 
-  if (!session || session.status !== 'IN_PROGRESS') {
+  if (!session || (session.status !== 'IN_PROGRESS' && session.status !== 'SCHEDULED')) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bgPrimary px-4">
         <div className="text-center">
@@ -36,7 +36,9 @@ export default async function JoinPage({ params }: JoinPageProps) {
   }
 
   const hostName = session.participants[0]?.user?.name ?? 'Someone';
-  const meetingUrl = await getMeetingUrl(code, { name: 'Guest' });
+  const meetingUrl = session.status === 'IN_PROGRESS'
+    ? await getMeetingUrl(code, { name: 'Guest' })
+    : '';
 
   return (
     <GuestJoinClient
@@ -45,6 +47,8 @@ export default async function JoinPage({ params }: JoinPageProps) {
       startAtUtc={session.startAtUtc.toISOString()}
       endAtUtc={session.endAtUtc.toISOString()}
       meetingUrl={meetingUrl}
+      status={session.status}
+      inviteCode={code}
     />
   );
 }

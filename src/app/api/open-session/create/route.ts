@@ -7,7 +7,7 @@ import { createRoomName, getMeetingUrl } from '@/lib/video/provider';
 export async function POST(request: Request) {
   try {
     const dbUser = await requireDbUser();
-    const { durationMinutes } = await request.json();
+    const { durationMinutes, scheduledStart } = await request.json();
 
     if (durationMinutes !== 25 && durationMinutes !== 50) {
       return NextResponse.json(
@@ -18,6 +18,36 @@ export async function POST(request: Request) {
 
     const inviteCode = crypto.randomUUID().slice(0, 8);
     const now = new Date();
+
+    // Scheduled session: scheduledStart is in the future
+    const scheduledDate = scheduledStart ? new Date(scheduledStart) : null;
+    const isScheduled = scheduledDate && scheduledDate.getTime() > now.getTime();
+
+    if (isScheduled) {
+      const endAt = new Date(scheduledDate.getTime() + durationMinutes * 60 * 1000);
+
+      const session = await prisma.session.create({
+        data: {
+          sessionType: 'OPEN',
+          status: 'SCHEDULED',
+          durationMinutes,
+          startAtUtc: scheduledDate,
+          endAtUtc: endAt,
+          inviteCode,
+          hostUserId: dbUser.id,
+        },
+      });
+
+      return NextResponse.json({
+        sessionId: session.id,
+        inviteCode,
+        status: 'SCHEDULED',
+        startAtUtc: scheduledDate.toISOString(),
+        endAtUtc: endAt.toISOString(),
+      });
+    }
+
+    // Immediate session (existing behavior)
     const endAt = new Date(now.getTime() + durationMinutes * 60 * 1000);
 
     const session = await prisma.session.create({
@@ -53,6 +83,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       sessionId: session.id,
       inviteCode,
+      status: 'IN_PROGRESS',
       meetingUrl,
     });
   } catch (err) {

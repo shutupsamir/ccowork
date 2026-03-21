@@ -23,9 +23,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only the host can end this session' }, { status: 403 });
     }
 
+    const newStatus = session.status === 'SCHEDULED' ? 'CANCELLED' : 'COMPLETED';
+
     await prisma.session.update({
       where: { id: sessionId },
-      data: { status: 'COMPLETED' },
+      data: { status: newStatus },
     });
 
     return NextResponse.json({ success: true });

@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     },
   });
 
-  if (!session || session.status !== 'IN_PROGRESS') {
+  if (!session || (session.status !== 'IN_PROGRESS' && session.status !== 'SCHEDULED')) {
     return NextResponse.json(
       { error: 'Session not found or has ended' },
       { status: 404 }
@@ -30,9 +30,14 @@ export async function GET(request: Request) {
   }
 
   const hostName = session.participants[0]?.user?.name ?? 'Someone';
-  const meetingUrl = await getMeetingUrl(code, { name: 'Guest' });
+
+  // Only generate meeting URL for in-progress sessions
+  const meetingUrl = session.status === 'IN_PROGRESS'
+    ? await getMeetingUrl(code, { name: 'Guest' })
+    : null;
 
   return NextResponse.json({
+    status: session.status,
     hostName,
     durationMinutes: session.durationMinutes,
     startAtUtc: session.startAtUtc.toISOString(),
