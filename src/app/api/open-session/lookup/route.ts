@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getJitsiUrl, getMeetingUrl } from '@/lib/video/provider';
+import { getMeetingUrl } from '@/lib/video/provider';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

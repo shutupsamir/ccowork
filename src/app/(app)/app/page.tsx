@@ -36,21 +36,34 @@ export default async function DashboardPage() {
   const userId = await getCurrentUser();
   if (!userId) redirect('/sign-in');
 
-  const recentParticipations = await prisma.sessionParticipant.findMany({
-    where: { userId },
-    orderBy: { session: { startAtUtc: 'desc' } },
-    take: 5,
-    include: {
-      session: {
-        include: {
-          participants: {
-            where: { userId: { not: userId } },
-            include: { user: { select: { name: true } } },
+  let recentParticipations: {
+    session: {
+      id: string;
+      durationMinutes: number;
+      status: string;
+      startAtUtc: Date;
+      participants: { user: { name: string | null } }[];
+    };
+  }[] = [];
+  try {
+    recentParticipations = await prisma.sessionParticipant.findMany({
+      where: { userId },
+      orderBy: { session: { startAtUtc: 'desc' } },
+      take: 5,
+      include: {
+        session: {
+          include: {
+            participants: {
+              where: { userId: { not: userId } },
+              include: { user: { select: { name: true } } },
+            },
           },
         },
       },
-    },
-  });
+    });
+  } catch (err) {
+    console.error('Dashboard query failed:', err);
+  }
 
   return (
     <div className="space-y-8">
