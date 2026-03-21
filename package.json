@@ -18,6 +18,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@clerk/nextjs": "^5.7.0",
     "@prisma/client": "^5.22.0",
     "clsx": "^2.1.1",
@@ -25,10 +26,9 @@
     "inngest": "^3.27.0",
     "lucide-react": "^0.460.0",
     "next": "^14.2.18",
+    "openai": "^4.104.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@anthropic-ai/sdk": "^0.39.0",
-    "openai": "^4.77.0",
     "resend": "^4.0.1",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.23.8"

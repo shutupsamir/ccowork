@@ -36,8 +36,8 @@ export async function GET(req: NextRequest) {
     });
 
     // Enrich with sender names
-    const userIds = [...new Set(messages.filter((m) => m.senderId).map((m) => m.senderId!))];
-    const agentIds = [...new Set(messages.filter((m) => m.agentId).map((m) => m.agentId!))];
+    const userIds = Array.from(new Set(messages.filter((m) => m.senderId).map((m) => m.senderId!)));
+    const agentIds = Array.from(new Set(messages.filter((m) => m.agentId).map((m) => m.agentId!)));
 
     const [users, agents] = await Promise.all([
       userIds.length > 0
